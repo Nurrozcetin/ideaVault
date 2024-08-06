@@ -18,27 +18,21 @@ class RequirementsSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']  
 
 class IdeaSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(write_only=True)
-    desc = serializers.CharField(write_only=True)
-    encrypted_title = serializers.SerializerMethodField(read_only=True)
-    encrypted_desc = serializers.SerializerMethodField(read_only=True)
+    encrypted_id = serializers.SerializerMethodField()
     requirements = RequirementsSerializer(many=True)
     category = CategorySerializer(many=True)
     member = MemberSerializer(many=True)
 
     class Meta:
         model = Idea
-        fields = ['id', 'title', 'desc', 'encrypted_title', 'encrypted_desc', 'requirements', 'category', 'member']
+        fields = ['id', 'encrypted_id', 'title', 'desc', 'requirements', 'category', 'member']
 
     def create(self, validated_data):
         key = load_key('secret.key')
-        validated_data['title'] = encrypt_message(validated_data['title'], key)
-        validated_data['desc'] = encrypt_message(validated_data['desc'], key)
-
         requirements_data = validated_data.pop('requirements')
         category_data = validated_data.pop('category')
         member_data = validated_data.pop('member')
-        
+
         idea = Idea.objects.create(**validated_data)
 
         for req_data in requirements_data:
@@ -57,14 +51,15 @@ class IdeaSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         key = load_key('secret.key')
-        if 'title' in validated_data:
-            instance.title = encrypt_message(validated_data['title'], key)
-        if 'desc' in validated_data:
-            instance.desc = encrypt_message(validated_data['desc'], key)
         
         requirements_data = validated_data.pop('requirements', None)
         category_data = validated_data.pop('category', None)
         member_data = validated_data.pop('member', None)
+
+        if 'title' in validated_data:
+            instance.title = validated_data['title']
+        if 'desc' in validated_data:
+            instance.desc = validated_data['desc']
 
         if requirements_data:
             instance.requirements.clear()
@@ -87,16 +82,9 @@ class IdeaSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    def get_encrypted_title(self, obj):
+    def get_encrypted_id(self, obj):
         key = load_key('secret.key')
         try:
-            return decrypt_message(obj.title, key)
-        except Exception as e:
-            return str(e)
-
-    def get_encrypted_desc(self, obj):
-        key = load_key('secret.key')
-        try:
-            return decrypt_message(obj.desc, key)
+            return encrypt_message(str(obj.id), key)
         except Exception as e:
             return str(e)

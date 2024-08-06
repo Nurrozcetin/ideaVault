@@ -12,6 +12,7 @@ class Requirements(models.Model):
     name = models.CharField(max_length=100)
 
 class Idea(models.Model):
+    id = models.CharField(max_length=255, primary_key=True)
     title = models.CharField(max_length=100)
     desc = models.TextField()
     requirements = models.ManyToManyField(Requirements, related_name='ideas')
@@ -20,14 +21,9 @@ class Idea(models.Model):
 
     def save(self, *args, **kwargs):
         key = load_key('secret.key')
-        self.title = encrypt_message(self.get_plain_title(), key)
-        self.desc = encrypt_message(self.get_plain_desc(), key)
+        if not self.pk:  
+            self.id = encrypt_message(self.get_plain_id(), key)
         super().save(*args, **kwargs)
 
-    def get_plain_title(self):
-        key = load_key('secret.key')
-        return decrypt_message(self.title, key)
-
-    def get_plain_desc(self):
-        key = load_key('secret.key')
-        return decrypt_message(self.desc, key)
+    def get_plain_id(self):
+        return decrypt_message(self.id, load_key('secret.key'))
