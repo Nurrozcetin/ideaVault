@@ -14,13 +14,13 @@ def load_key(filename):
 def encrypt_message(message, key):
     f = Fernet(key)
     if isinstance(message, str):
-        message = message.encode()  # Convert to bytes
+        message = message.encode()  
     encrypted_message = f.encrypt(message)
     return encrypted_message
 
 def decrypt_message(encrypted_message, key):
     f = Fernet(key)
     if isinstance(encrypted_message, str):
-        encrypted_message = encrypted_message.encode()  # Convert to bytes
+        encrypted_message = encrypted_message.encode()  
     decrypted_message = f.decrypt(encrypted_message).decode()
     return decrypted_message
